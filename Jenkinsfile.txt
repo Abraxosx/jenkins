@@ -1,0 +1,38 @@
+pipeline {
+    agent any
+    stages {
+        stage('Clone Repository') {
+            steps {
+                git 'https://github.com/abraxosx/jenkins.git'
+            }
+        }
+        stage('Build') {
+            steps {
+                sh 'mvn clean package'
+            }
+        }
+        stage('Build Docker Image') {
+            steps {
+                script {
+                    dockerImage = docker.build("abraxosx/javacalc:${env.BUILD_ID}")
+                }
+            }
+        }
+        stage('Test') {
+            steps {
+                sh 'echo "Running tests..."'
+                // Add actual test commands here
+            }
+        }
+        stage('Push Docker Image') {
+            steps {
+                script {
+                    docker.withRegistry('https://index.docker.io/v1/', 'dockerhub-credentials-id') {
+                        dockerImage.push("${env.BUILD_ID}")
+                        dockerImage.push("latest")
+                    }
+                }
+            }
+        }
+    }
+}
